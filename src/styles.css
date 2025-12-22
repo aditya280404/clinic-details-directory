@@ -64,10 +64,11 @@ body {
   gap: 12px;
   align-items: center;
   margin-bottom: 8px;
+  justify-content: flex-end;
 }
 
 .search-input {
-  flex: 1;
+  width: 320px;
   display: flex;
   align-items: center;
   gap: 10px;

@@ -236,13 +236,13 @@ const ClinicHome = () => {
               Clear Filters
             </button>
           </div>
-          <button
+          {/* <button
             type="button"
             className="button primary"
             onClick={() => setIsAddModalOpen(true)}
           >
             + Add Clinic
-          </button>
+          </button> */}
         </div>
       </form>
 
