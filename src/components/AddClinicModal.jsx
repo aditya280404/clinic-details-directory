@@ -6,7 +6,6 @@ const initialForm = {
   name: "",
   doctorName: "",
   address: "",
-  phone: "",
   services: [] // Changed to array for dynamic inputs
 };
 
@@ -14,6 +13,7 @@ const AddClinicModal = ({ isOpen, onClose, onSubmit }) => {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
 
+  // Reset form each time the modal opens
   // Reset form each time the modal opens
   useEffect(() => {
     if (isOpen) {
@@ -60,7 +60,6 @@ const AddClinicModal = ({ isOpen, onClose, onSubmit }) => {
       name: form.name.trim(),
       doctorName: form.doctorName.trim(),
       address: form.address.trim(),
-      phone: form.phone.trim(),
       // Filter out empty services
       services: form.services
         .map(s => ({ name: s.name.trim(), phone: s.phone.trim() }))
@@ -73,9 +72,14 @@ const AddClinicModal = ({ isOpen, onClose, onSubmit }) => {
     if (!trimmed.name) nextErrors.name = "Clinic name is required";
     if (!trimmed.doctorName) nextErrors.doctorName = "Doctor name is required";
     if (!trimmed.address) nextErrors.address = "Clinic address is required";
-    if (!trimmed.phone) nextErrors.phone = "Phone number is required";
+
+
+
     if (trimmed.services.length === 0)
       nextErrors.services = "At least one service is required";
+
+    // Phone validation regex
+    const phoneRegex = /^\+?[\d\s-]{10,}$/;
 
     // Check for incomplete services
     const incompleteService = trimmed.services.some(s => !s.name || !s.phone);
@@ -83,8 +87,16 @@ const AddClinicModal = ({ isOpen, onClose, onSubmit }) => {
       nextErrors.services = "All added services must have both name and phone";
     }
 
+    // Check for valid service phone numbers
+    const invalidServicePhone = trimmed.services.some(s => s.phone && !phoneRegex.test(s.phone));
+    if (invalidServicePhone && !nextErrors.services) {
+      nextErrors.services = "All service phone numbers must be valid (min 10 digits)";
+    }
+
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
+
+
 
     // Pass data to parent
     onSubmit(trimmed);
@@ -161,19 +173,7 @@ const AddClinicModal = ({ isOpen, onClose, onSubmit }) => {
             {errors.address && <span className="error">{errors.address}</span>}
           </label>
 
-          {/* Phone Number */}
-          <label className="label">
-            Phone Number
-            <input
-              type="text"
-              name="phone"
-              className={`input ${errors.phone ? "input-error" : ""}`}
-              placeholder="e.g., (555) 123-4567"
-              value={form.phone}
-              onChange={handleChange}
-            />
-            {errors.phone && <span className="error">{errors.phone}</span>}
-          </label>
+
 
           {/* Services Dynamic List */}
           <div className="label">

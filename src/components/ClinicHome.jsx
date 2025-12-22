@@ -52,7 +52,6 @@ const ClinicHome = () => {
       // Map frontend fields to backend fields
       const payload = {
         name: clinicData.name,
-        phone: clinicData.phone,
         clinic_code: clinicData.clinicId,
         doctor_name: clinicData.doctorName,
         address: clinicData.address,
@@ -186,20 +185,16 @@ const ClinicHome = () => {
     });
   }, [processedClinics, filters, searchTerm]);
 
-  const highlightTerms = useMemo(() => {
-    const active = Object.values(filters).filter(Boolean);
-    // If no filters but user performed a manual search, use searchTerm
-    if (active.length === 0 && searchTerm.trim()) {
-      return [searchTerm.trim()];
-    }
-    return active;
-  }, [filters, searchTerm]);
+  const highlightText = (text, specificTerm) => {
+    if (!text) return text;
 
-  const highlightText = (text) => {
-    if (!text || highlightTerms.length === 0) return text;
+    // Terms to highlight: global search term + specific column filter
+    const termsFn = [searchTerm.trim(), specificTerm].filter(Boolean);
+
+    if (termsFn.length === 0) return text;
     let result = text.toString();
-    highlightTerms.forEach((term) => {
-      if (!term) return;
+
+    termsFn.forEach((term) => {
       const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(`(${escaped})`, "gi");
       result = result.replace(regex, '<mark class="hl">$1</mark>');
@@ -347,7 +342,10 @@ const ClinicHome = () => {
 
       {error && (
         <div className="error-banner">
-          {error}
+          <p>{error}</p>
+          <button className="button secondary button-sm" onClick={loadClinics}>
+            Retry
+          </button>
         </div>
       )}
 
@@ -380,16 +378,16 @@ const ClinicHome = () => {
               ) : (
                 visibleClinics.map((row) => (
                   <tr key={row.uniqueKey}>
-                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.clinic_code || row.clinicId || "-") }} />
-                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.name || "-") }} />
-                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.doctor_name || row.doctorName || "-") }} />
-                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.address || "-") }} />
+                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.clinic_code || row.clinicId || "-", filters.clinicId) }} />
+                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.name || "-", filters.clinicName) }} />
+                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.doctor_name || row.doctorName || "-", filters.doctorName) }} />
+                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.address || "-", filters.address) }} />
                     {/* Display the service-specific phone number */}
-                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.displayPhone || "-") }} />
+                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.displayPhone || "-", filters.phone) }} />
                     <td className="services-cell">
                       <span
                         className="tag"
-                        dangerouslySetInnerHTML={{ __html: highlightText(row.displayService) }}
+                        dangerouslySetInnerHTML={{ __html: highlightText(row.displayService, filters.services) }}
                       />
                     </td>
                   </tr>

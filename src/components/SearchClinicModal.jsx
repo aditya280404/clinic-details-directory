@@ -78,24 +78,7 @@ const SearchClinicModal = ({ isOpen, onClose, onResults, onSearchStart }) => {
             }
 
             onResults(results);
-            onClose(); // Close modal on success? Or keep open?
-            // User requirement: "details should appear in a pop up similar to add button" - wait.
-            // "search the clinic detail and the details should appear in a pop up similar to add button"
-            // This phrasing is ambiguous. 
-            // 1. Search inputs in a popup? -> Yes "user will some input fields ... to search"
-            // 2. Details appear in a popup? 
-            // Maybe the RESULTS should be in the popup?
-            // Or maybe the search takes place in a popup, and results populate the main table?
-            // "details should appear in a pop up"
-            // If the search yields one result, maybe show it in a Detail Modal?
-            // If it yields list, show in table?
-
-            // I will assume for now: Search Modal allows searching -> Logic updates the Main Table.
-            // If the user wants to see details of a SPECIFIC clinic in a popup, that's a "View Detail" feature.
-            // But the requirement says "search the clinic detail and the details should appear in a pop up".
-            // Maybe the SEARCH RESULTS should be in a popup?
-            // No, usually you search to filter a list.
-            // I will update the main list for now. If I need a popup for results, I can add it.
+            onClose(); 
 
         } catch (err) {
             console.error(err);
