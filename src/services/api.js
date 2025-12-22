@@ -1,4 +1,5 @@
-const API_PREFIX = '/api/clinics';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const API_PREFIX = `${API_BASE}/api/clinics`;
 
 /**
  * Helper to handle response
