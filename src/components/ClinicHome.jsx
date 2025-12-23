@@ -12,7 +12,25 @@ const initialFilters = {
   services: "",
 };
 
+const formatPhoneNumber = (value) => {
+  if (!value) return value;
+  let phoneNumber = value.toString().replace(/[^\d]/g, "");
+
+  // Normalize 11 digit numbers starting with 1 to 10 digits
+  if (phoneNumber.length === 11 && phoneNumber.startsWith('1')) {
+    phoneNumber = phoneNumber.slice(1);
+  }
+
+  const len = phoneNumber.length;
+  if (len < 4) return `+1 ${phoneNumber}`;
+  if (len < 7) {
+    return `+1 (${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  }
+  return `+1 (${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
+};
+
 const ClinicHome = () => {
+
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -162,11 +180,17 @@ const ClinicHome = () => {
       const phone = (row.displayPhone || "").toLowerCase();
       const serviceText = (row.displayService || "").toLowerCase();
 
+      const termDigits = term.replace(/\D/g, "");
+      const phoneDigits = phone.replace(/\D/g, "");
+
       if (f.clinicId && !clinicId.includes(f.clinicId.toLowerCase())) return false;
       if (f.clinicName && !name.includes(f.clinicName.toLowerCase())) return false;
       if (f.doctorName && !doctor.includes(f.doctorName.toLowerCase())) return false;
       if (f.address && !address.includes(f.address.toLowerCase())) return false;
-      if (f.phone && !phone.includes(f.phone.toLowerCase())) return false;
+
+      const filterPhoneDigits = (f.phone || "").replace(/\D/g, "");
+      if (filterPhoneDigits && !phoneDigits.includes(filterPhoneDigits)) return false;
+
       if (f.services && !serviceText.includes(f.services.toLowerCase())) return false;
 
       if (term) {
@@ -175,7 +199,7 @@ const ClinicHome = () => {
           name.includes(term) ||
           doctor.includes(term) ||
           address.includes(term) ||
-          phone.includes(term) ||
+          (termDigits.length > 0 && phoneDigits.includes(termDigits)) ||
           serviceText.includes(term);
 
         if (!matchesGlobal) return false;
@@ -187,19 +211,37 @@ const ClinicHome = () => {
 
   const highlightText = (text, specificTerm) => {
     if (!text) return text;
+    const strText = text.toString();
 
     // Terms to highlight: global search term + specific column filter
-    const termsFn = [searchTerm.trim(), specificTerm].filter(Boolean);
+    const rawTerms = [searchTerm.trim(), specificTerm].filter(Boolean);
 
-    if (termsFn.length === 0) return text;
-    let result = text.toString();
+    if (rawTerms.length === 0) return strText;
 
-    termsFn.forEach((term) => {
-      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const regex = new RegExp(`(${escaped})`, "gi");
-      result = result.replace(regex, '<mark class="hl">$1</mark>');
+    // Build regex patterns
+    const patterns = rawTerms.map((term) => {
+      return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // Escape literal
     });
-    return result;
+
+    // Add fuzzy digit patterns for phone-like searches
+    rawTerms.forEach((term) => {
+      const digits = term.replace(/\D/g, "");
+      if (digits.length >= 3) {
+        // e.g. "123" -> "1\D*2\D*3"
+        // This allows matching "(123) 456" with "123456"
+        const fuzzy = digits.split("").join("\\D*");
+        patterns.push(fuzzy);
+      }
+    });
+
+    try {
+      const combinedPattern = `(${patterns.join("|")})`;
+      const regex = new RegExp(combinedPattern, "gi");
+      return strText.replace(regex, '<mark class="hl">$1</mark>');
+    } catch (e) {
+      // Fallback if regex fails
+      return strText;
+    }
   };
 
   return (
@@ -359,7 +401,7 @@ const ClinicHome = () => {
                 <th>Clinic Name</th>
                 <th>Doctor Name</th>
                 <th>Clinic Address</th>
-                <th>Phone Number</th>
+                <th>Twilio number</th>
                 <th>Services</th>
               </tr>
             </thead>
@@ -383,7 +425,7 @@ const ClinicHome = () => {
                     <td dangerouslySetInnerHTML={{ __html: highlightText(row.doctor_name || row.doctorName || "-", filters.doctorName) }} />
                     <td dangerouslySetInnerHTML={{ __html: highlightText(row.address || "-", filters.address) }} />
                     {/* Display the service-specific phone number */}
-                    <td dangerouslySetInnerHTML={{ __html: highlightText(row.displayPhone || "-", filters.phone) }} />
+                    <td dangerouslySetInnerHTML={{ __html: highlightText(formatPhoneNumber(row.displayPhone) || "-", filters.phone) }} />
                     <td className="services-cell">
                       <span
                         className="tag"
